@@ -24,7 +24,7 @@ There may be other minor differences or bugs introduced. I'll try to fix them or
 
 To create a Sprig_MPTT model, you need to create a normal Sprig model but extend Sprig_MPTT instead of Sprig.
 
-Your table must have the four MPTT columns (left, right, level and scope) since there are reserved word classes,
+Your table must have the four MPTT columns (left, right, level and scope) since there are reserved word clashes,
 the default and recommended naming of these columns is `lft`, `rgt`, `lvl` and `scope` respectively. All four columns are integers.
 
 If the columns in your database are named as suggested, you do not need to manually define them in you `_init()` method as
