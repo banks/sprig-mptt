@@ -1,8 +1,6 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 /**
- * Modified Preorder Tree Traversal Class.
- * 
- * Ported from ORM_MPTT by Matthew Davies and Kiall Mac Innes
+ * Sprig_MPTT test model
  *
  * @package MPTT
  * @author Mathew Davies
@@ -15,9 +13,10 @@ class Model_MPTT_Test extends Sprig_MPTT {
 	
 	protected function _init()
 	{
+		// Notice how the MPTT fields are added automatically
 		$this->_fields += array(
 			'id' => new Sprig_Field_Auto,
-			'name' => new Sprig_Field_Char(),
+			'name' => new Sprig_Field_Char,
 		);
 	}
 	
@@ -44,7 +43,6 @@ class Model_MPTT_Test extends Sprig_MPTT {
 		DB::insert('sprig_mptt_test')->values(array('id' => 10,'lvl' => 3,'lft' => 16, 'rgt' => 17, 'scope' => 1, 'name' => 'Leaf Node'))->execute();
 		DB::insert('sprig_mptt_test')->values(array('id' => 11,'lvl' => 2,'lft' => 19, 'rgt' => 20, 'scope' => 1, 'name' => 'Leaf Node'))->execute();
 		
-		
 		DB::insert('sprig_mptt_test')->values(array('id' => 12,'lvl' => 0,'lft' => 1, 'rgt' => 22, 'scope' => 2, 'name' => 'Root Node'))->execute();
 		DB::insert('sprig_mptt_test')->values(array('id' => 13,'lvl' => 1,'lft' => 2, 'rgt' => 3, 'scope' => 2, 'name' => 'Leaf Node'))->execute();
 		DB::insert('sprig_mptt_test')->values(array('id' => 14,'lvl' => 1,'lft' => 4, 'rgt' => 7, 'scope' => 2, 'name' => 'Normal Node'))->execute();
@@ -56,7 +54,6 @@ class Model_MPTT_Test extends Sprig_MPTT {
 		DB::insert('sprig_mptt_test')->values(array('id' => 20,'lvl' => 3,'lft' => 14, 'rgt' => 15, 'scope' => 2, 'name' => 'Leaf Node'))->execute();
 		DB::insert('sprig_mptt_test')->values(array('id' => 21,'lvl' => 3,'lft' => 16, 'rgt' => 17, 'scope' => 2, 'name' => 'Leaf Node'))->execute();
 		DB::insert('sprig_mptt_test')->values(array('id' => 22,'lvl' => 2,'lft' => 19, 'rgt' => 20, 'scope' => 2, 'name' => 'Leaf Node'))->execute();
-		
 		
 		DB::insert('sprig_mptt_test')->values(array('id' => 23,'lvl' => 0,'lft' => 1, 'rgt' => 22, 'scope' => 3, 'name' => 'Root Node'))->execute();
 		DB::insert('sprig_mptt_test')->values(array('id' => 24,'lvl' => 1,'lft' => 2, 'rgt' => 3, 'scope' => 3, 'name' => 'Leaf Node'))->execute();
