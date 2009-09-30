@@ -6,7 +6,7 @@ This extension is largely based on the [Kohana 2.x](http://www.kohanaphp.com)
 [ORM_MPTT](http://dev.kohanaphp.com/projects/mptt) module developed by 
 Mathew Davies and Kiall Mac Innes. All the hardwork was done by them!
 
-## Differences From ORM_MPTT
+### Differences From ORM_MPTT
 
 The vast majority of functionality is the same, including the same function names etc.
 
@@ -18,9 +18,9 @@ though, will Sprig_MPTT automatically creating default MPTT fields if none are s
 
 There may be other minor differences or bugs introduced. I'll try to fix them or point them out as I find them.
 
-# Quick Start
+## Quick Start
 
-## Defining a Model
+### Defining a Model
 
 To create a Sprig_MPTT model, you need to create a normal Sprig model but extend Sprig_MPTT instead of Sprig.
 
@@ -48,7 +48,7 @@ as normal in your `_init` method. Example:
 
 You only need to define the MPTT fields for which the column name differs from the defaults above, the rest are created automatically.
 
-## Setting up a Tree
+### Setting up a Tree
 
 The major difference with Sprig_MPTT is that you can no longer use the create() method. This is to stop inserts invalidating the MPTT tree.
 
@@ -76,7 +76,7 @@ Before you create any other records in a tree, you need to create the root recor
 	
 After that, you can use the scope tree with any of the other methods in the class.
 
-## Inserting Nodes
+### Inserting Nodes
 
 Nodes can be inserted (created) using:
 
@@ -87,7 +87,7 @@ Nodes can be inserted (created) using:
 
 Where `$target` is either another (loaded) Sprig_MPTT object of the primary key value (id) of one. They do exactly what you would expect.
 
-## Moving a node
+### Moving a node
 
 Similarly, exisiting nodes can be moved in the tree using:
 
@@ -96,11 +96,11 @@ Similarly, exisiting nodes can be moved in the tree using:
 	$model->move_to_next_sibling($target);
 	$model->move_to_prev_sibling($target);
 
-## Other functions
+### Other functions
 
 Deleting a node is the same as in Sprig. As is pretty much everything else.
 
-## Accessing Relationships
+### Accessing Relationships
 
 A model's realted nodes can be accessed using:
 
@@ -116,13 +116,13 @@ A model's realted nodes can be accessed using:
 
 To specify ordering and whther or not to include the current object in the result, use the correspondingly named methods parents() children() etc.
 
-## Printing the Tree
+### Printing the Tree
 
 select_list has been extended to support indenting as in ORM_MPTT
 
 You may aslo use the render_descendants() or render_children() methods along to render HTML tree representations. Four example templates copied from ORM_MPTT are included.
 
-# TODO
+## TODO
 
  - This seems to work but has not been thoroughly tested.
  - There are some known limitations such as you can only use an integer as a scope thi smay or may not warrant further work
