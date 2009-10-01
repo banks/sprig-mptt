@@ -56,7 +56,7 @@ Before you create any other records in a tree, you need to create the root recor
 	$root = Sprig::factory('test')->root(1);
 	
 	// If the root node isn't loaded, we must create it before we can do anything else with the tree in scope 1
-	if ($root->loaded())
+	if ( ! $root->loaded())
 	{
 		$root->name = 'Root Node'; // All object properties which are required must be specified otherwise Validation will fail
 		
