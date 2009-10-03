@@ -183,7 +183,7 @@ abstract class Sprig_MPTT extends Sprig
 	 */
 	public function is_child($target)
 	{
-		return ($this->parent->{$this->primary_key} === $target->{$this->primary_key});
+		return ($this->parent->{$this->pk()} === $target->{$this->pk()});
 	}
 	
 	/**
@@ -195,7 +195,7 @@ abstract class Sprig_MPTT extends Sprig
 	 */
 	public function is_parent($target)
 	{
-		return ($this->{$this->primary_key} === $target->parent->{$this->primary_key});
+		return ($this->{$this->pk()} === $target->parent->{$this->pk()});
 	}
 	
 	/**
@@ -207,10 +207,10 @@ abstract class Sprig_MPTT extends Sprig
 	 */
 	public function is_sibling($target)
 	{
-		if ($this->{$this->primary_key} === $target->{$this->primary_key})
+		if ($this->{$this->pk()} === $target->{$this->pk()})
 			return FALSE;
 		
-		return ($this->parent->{$this->primary_key} === $target->parent->{$this->primary_key});
+		return ($this->parent->{$this->pk()} === $target->parent->{$this->pk()});
 	}
 	
 	/**
@@ -286,7 +286,6 @@ abstract class Sprig_MPTT extends Sprig
 		}
 		
 		$parents =  Sprig_MPTT::factory($this->_model)->load($query, $limit);
-
 		
 		return $parents;
 	}
@@ -339,6 +338,11 @@ abstract class Sprig_MPTT extends Sprig
 			}
 		}
 		
+		if ($leaves_only)
+		{
+			$query->where($this->right_column, '=', new Database_Expression('`'.$this->left_column.'` + 1'));
+		}
+		
 		return Sprig_MPTT::factory($this->_model)->load($query, $limit);
 	}
 	
@@ -375,7 +379,7 @@ abstract class Sprig_MPTT extends Sprig
 	 */
 	public function leaves($self = FALSE, $direction = 'ASC')
 	{
-		return $this->descendants($self, $direction, FALSE, TRUE);
+		return $this->descendants($self, $direction, TRUE, TRUE);
 	}
 	
 	/**
@@ -908,7 +912,7 @@ abstract class Sprig_MPTT extends Sprig
 	{
 		// TODO... redo this so its proper :P and open it public
 		// used by verify_tree()
-		return DB::select()->distinct($this->scope_column)->from($this->_table)->execute();
+		return DB::select()->as_object()->distinct($this->scope_column)->from($this->_table)->execute();
 	}
 	
 	public function verify_scope($scope)
