@@ -122,9 +122,8 @@ You may aslo use the render_descendants() or render_children() methods along to 
 
 ## TODO
 
- - This seems to work but has not been thoroughly tested.
  - There are some known limitations such as you can only use an integer as a scope -- this may or may not warrant further work
- - Fix the inevitable bugs that will be found!
+ - Fix the any bugs that are found!
 	
 	
 	
