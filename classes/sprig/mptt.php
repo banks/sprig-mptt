@@ -495,7 +495,7 @@ abstract class Sprig_MPTT extends Sprig
 		if ($this->_loaded)
 			return FALSE;
 		
-		$this->lock();
+		
 		
 		if ( ! $target instanceof $this)
 		{
@@ -510,6 +510,8 @@ abstract class Sprig_MPTT extends Sprig
 		{
 			$target->reload();
 		}
+		
+		$this->lock();
 		
 		$this->{$this->left_column}  = $target->{$copy_left_from} + $left_offset;
 		$this->{$this->right_column} = $this->{$this->left_column} + 1;
@@ -659,14 +661,11 @@ abstract class Sprig_MPTT extends Sprig
 	 */
 	public function move_to_first_child($target)
 	{
-		$this->lock();	
+		
 		
 		// Move should only work on nodes that are already in the tree.. if its not already it the tree it needs to be inserted!
 		if (!$this->_loaded)
 			return FALSE;
-
-		// Make sure we have the most uptodate version of this AFTER we lock
-		$this->reload(); // This should *probably* go into $this->lock();
 		
 		if ( ! $target instanceof $this)
 		{
@@ -680,9 +679,12 @@ abstract class Sprig_MPTT extends Sprig
 		// Stop $this being moved into a descendant or itself
 		if ($target->is_descendant($this) OR $this->{$this->pk()} === $target->{$this->pk()})
 		{
-			$this->unlock();
 			return FALSE;
 		}
+		
+		// Make sure we have the most uptodate version of this AFTER we lock
+		$this->lock();
+		$this->reload();
 		
 		$new_left = $target->{$this->left_column} + 1;
 		$level_offset = $target->{$this->level_column} - $this->{$this->level_column} + 1;
@@ -705,9 +707,6 @@ abstract class Sprig_MPTT extends Sprig
 		// Move should only work on nodes that are already in the tree.. if its not already it the tree it needs to be inserted!
 		if (!$this->_loaded)
 			return FALSE;
-			
-		$this->lock();
-		$this->reload(); // Make sure we have the most upto date version of this AFTER we lock
 		
 		if ( ! $target instanceof $this)
 		{
@@ -721,9 +720,11 @@ abstract class Sprig_MPTT extends Sprig
 		// Stop $this being moved into a descendant or itself
 		if ($target->is_descendant($this) OR $this->{$this->pk()} === $target->{$this->pk()})
 		{
-			$this->unlock();
 			return FALSE;
 		}
+			
+		$this->lock();
+		$this->reload(); // Make sure we have the most upto date version of this AFTER we lock
 		
 		$new_left = $target->{$this->right_column};
 		$level_offset = $target->{$this->level_column} - $this->{$this->level_column} + 1;
@@ -746,9 +747,6 @@ abstract class Sprig_MPTT extends Sprig
 		// Move should only work on nodes that are already in the tree.. if its not already it the tree it needs to be inserted!
 		if (!$this->_loaded)
 			return FALSE;
-
-		$this->lock();
-		$this->reload(); // Make sure we have the most upto date version of this AFTER we lock
 		
 		if ( ! $target instanceof $this)
 		{
@@ -762,9 +760,11 @@ abstract class Sprig_MPTT extends Sprig
 		// Stop $this being moved into a descendant or itself
 		if ($target->is_descendant($this) OR $this->{$this->pk()} === $target->{$this->pk()})
 		{
-			$this->unlock();
 			return FALSE;
 		}
+		
+		$this->lock();
+		$this->reload(); // Make sure we have the most upto date version of this AFTER we lock
 		
 		$new_left = $target->{$this->left_column};
 		$level_offset = $target->{$this->level_column} - $this->{$this->level_column};
@@ -787,9 +787,6 @@ abstract class Sprig_MPTT extends Sprig
 		// Move should only work on nodes that are already in the tree.. if its not already it the tree it needs to be inserted!
 		if (!$this->_loaded)
 			return FALSE;
-
-		$this->lock();
-		$this->reload(); // Make sure we have the most upto date version of this AFTER we lock
 		
 		if ( ! $target instanceof $this)
 		{
@@ -803,9 +800,11 @@ abstract class Sprig_MPTT extends Sprig
 		// Stop $this being moved into a descendant or itself
 		if ($target->is_descendant($this) OR $this->{$this->pk()} === $target->{$this->pk()})
 		{
-			$this->unlock();
 			return FALSE;
 		}
+
+		$this->lock();
+		$this->reload(); // Make sure we have the most upto date version of this AFTER we lock
 		
 		$new_left = $target->{$this->right_column} + 1;
 		$level_offset = $target->{$this->level_column} - $this->{$this->level_column};
@@ -962,16 +961,29 @@ abstract class Sprig_MPTT extends Sprig
 	}
 	
 	/**
-	 * Force object to reload from database even if there are no changes
+	 * Force object to reload MPTT fields from database
 	 * 
 	 * @return $this
 	 */
 	public function reload()
 	{
-		// Reset $_original for the primary key to force a reload
-		$this->_original[$this->pk()] = NULL;
+		if ( ! $this->_loaded) 
+		{
+			return FALSE;
+		}
 		
-		return $this->load();
+		$mptt_vals = DB::select(
+				$this->left_column,
+				$this->right_column,
+				$this->level_column,
+				$this->scope_column
+			)
+			->from($this->_table)
+			->where($this->pk(), '=', $this->{$this->pk()})
+			->execute()
+			->current();
+		
+		return $this->values($mptt_vals);
 	}
 		
 	/**
