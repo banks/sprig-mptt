@@ -4,7 +4,7 @@
  * 
  * Ported from ORM_MPTT originally by Matthew Davies and Kiall Mac Innes
  *
- * @package MPTT
+ * @package Sprig_MPTT
  * @author Mathew Davies
  * @author Kiall Mac Innes
  * @author Paul Banks

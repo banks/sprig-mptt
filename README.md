@@ -64,7 +64,7 @@ Before you create any other records in a tree, you need to create the root recor
 		{
 			$root->insert_as_new_root(1);
 		}
-		catch (Validation_Exception $e)
+		catch (Validate_Exception $e)
 		{
 			// Handle the bad data
 		}
