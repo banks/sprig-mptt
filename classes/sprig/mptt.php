@@ -608,6 +608,11 @@ abstract class Sprig_MPTT extends Sprig
 	 */
 	public function delete(Database_Query_Builder_Delete $query = NULL)
 	{
+		if ($query !== NULL)
+		{
+			throw new Sprig_Exception('Sprig_MPTT does not support passing a query object to delete()');
+		}
+		
 		$this->lock();
 
 		DB::delete($this->_table)
