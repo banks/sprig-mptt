@@ -528,8 +528,10 @@ abstract class Sprig_MPTT extends Sprig
 		{
 			parent::create();
 		}
-		catch (Validate_Exception $e)
+		catch (Exception $e)
 		{
+			// We had a problem creating - make sure we clean up the tree
+			$this->delete_space($this->{$this->left_column});
 			$this->unlock();
 			throw $e;
 		}
