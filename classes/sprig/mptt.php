@@ -51,15 +51,10 @@ abstract class Sprig_MPTT extends Sprig
 	 * Initialize the fields and add MPTT field defaults if not specified
 	 * @return void
 	 */
-	public function init()
+	protected function __construct()
 	{
-		if ($this->_init)
-		{
-			// Can only be called once
-			return;
-		}
-		// Set up Sprig object
-		parent::init();
+		// Initialize sprig (this will call _init() in the model)
+		parent::__construct();
 		
 		// Check we don't have a composite primary Key
 		if (is_array($this->pk())) 
@@ -602,7 +597,7 @@ abstract class Sprig_MPTT extends Sprig
 	 *
 	 * @access public
 	 */
-	public function delete()
+	public function delete(Database_Query_Builder_Delete $query = NULL)
 	{
 		$this->lock();
 
