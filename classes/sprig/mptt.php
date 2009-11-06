@@ -108,6 +108,15 @@ abstract class Sprig_MPTT extends Sprig
 			$this->scope_column = 'scope';
 			$this->_fields['scope'] = new Sprig_Field_MPTT_Scope(array('column' => 'scope'));;
 		}
+		
+		// Check we have default values for all (MPTT) fields (otherwise we cause errors)
+		foreach ($this->_fields as $name => $field)
+		{
+			if ($field instanceof Sprig_Field_MPTT AND ! isset($this->_original[$name]))
+			{
+				$this->_original[$name] = NULL;
+			}
+		}
 	}
 	
 

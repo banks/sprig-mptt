@@ -473,10 +473,10 @@ class UnitTest_Sprig_MPTT extends UnitTest_Case {
 	function test_last_child()
 	{
 		$node_6 = Sprig::factory('mptt_test', array('id' => 6))->load();
-		$first_child = $node_6->last_child;
+		$last_child = $node_6->last_child;
 		
 		$this
-			->assert_equal($first_child->id, 11);
+			->assert_equal($last_child->id, 11);
 	}
 
 } // End Sprig_MPTT
