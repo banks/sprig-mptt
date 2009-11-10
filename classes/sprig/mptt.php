@@ -2,7 +2,7 @@
 /**
  * Modified Preorder Tree Traversal Class.
  * 
- * Ported from ORM_MPTT originally by Matthew Davies and Kiall Mac Innes
+ * Ported from Sprig_MPTT originally by Matthew Davies and Kiall Mac Innes
  *
  * @package Sprig_MPTT
  * @author Mathew Davies
@@ -127,7 +127,7 @@ abstract class Sprig_MPTT extends Sprig
 	 */
 	protected function lock()
 	{
-		Database::instance()->query(NULL, 'LOCK TABLE '.$this->_table.' WRITE', TRUE);
+		Database::instance($this->_db)->query(NULL, 'LOCK TABLE '.$this->_table.' WRITE', TRUE);
 	}
 	
 	/**
@@ -137,7 +137,7 @@ abstract class Sprig_MPTT extends Sprig
 	 */
 	protected function unlock()
 	{
-		Database::instance()->query(NULL, 'UNLOCK TABLES', TRUE);
+		Database::instance($this->_db)->query(NULL, 'UNLOCK TABLES', TRUE);
 	}
 
 	/**
@@ -166,7 +166,7 @@ abstract class Sprig_MPTT extends Sprig
 	 * Is the current node a descendant of the supplied node.
 	 *
 	 * @access public
-	 * @param ORM_MPTT $target Target
+	 * @param Sprig_MPTT $target Target
 	 * @return bool
 	 */
 	public function is_descendant($target)
@@ -182,7 +182,7 @@ abstract class Sprig_MPTT extends Sprig
 	 * Is the current node a direct child of the supplied node?
 	 *
 	 * @access public
-	 * @param ORM_MPTT $target Target
+	 * @param Sprig_MPTT $target Target
 	 * @return bool
 	 */
 	public function is_child($target)
@@ -194,7 +194,7 @@ abstract class Sprig_MPTT extends Sprig
 	 * Is the current node the direct parent of the supplied node?
 	 *
 	 * @access public
-	 * @param ORM_MPTT $target Target
+	 * @param Sprig_MPTT $target Target
 	 * @return bool
 	 */
 	public function is_parent($target)
@@ -411,13 +411,13 @@ abstract class Sprig_MPTT extends Sprig
 			->set(array($this->left_column => new Database_Expression('`'.$this->left_column.'` + '.$size)))
 			->where($this->left_column, '>=', $start)
 			->where($this->scope_column, '=', $this->{$this->scope_column})
-			->execute();
+			->execute($this->_db);
 			
 		DB::update($this->_table)
 			->set(array($this->right_column => new Database_Expression('`'.$this->right_column.'` + '.$size)))
 			->where($this->right_column, '>=', $start)
 			->where($this->scope_column, '=', $this->{$this->scope_column})
-			->execute();
+			->execute($this->_db);
 	}
 	
 	/**
@@ -435,13 +435,13 @@ abstract class Sprig_MPTT extends Sprig
 			->set(array($this->left_column => new Database_Expression('`'.$this->left_column.'` - '.$size)))
 			->where($this->left_column, '>=', $start)
 			->where($this->scope_column, '=', $this->{$this->scope_column})
-			->execute();
+			->execute($this->_db);
 			
 		DB::update($this->_table)
 			->set(array($this->right_column => new Database_Expression('`'.$this->right_column.'` - '.$size)))
 			->where($this->right_column, '>=', $start)
 			->where($this->scope_column, '=', $this->{$this->scope_column})
-			->execute();
+			->execute($this->_db);
 	}
 	
 	/**
@@ -616,14 +616,24 @@ abstract class Sprig_MPTT extends Sprig
 		}
 		
 		$this->lock();
-
-		DB::delete($this->_table)
-			->where($this->left_column, '>=', $this->{$this->left_column})
-			->where($this->right_column, '<=', $this->{$this->right_column})
-			->where($this->scope_column, '=', $this->{$this->scope_column})
-			->execute();
 		
-		$this->delete_space($this->{$this->left_column}, $this->get_size());
+		// Handle un-foreseen exceptions
+		try
+		{
+			DB::delete($this->_table)
+				->where($this->left_column, '>=', $this->{$this->left_column})
+				->where($this->right_column, '<=', $this->{$this->right_column})
+				->where($this->scope_column, '=', $this->{$this->scope_column})
+				->execute($this->_db);
+			
+			$this->delete_space($this->{$this->left_column}, $this->get_size());
+		}
+		catch (Exception $e)
+		{
+			//Unlock table and re-throw exception
+			$this->unlock();
+			throw $e;
+		}
 		
 		$this->unlock();
 	}
@@ -667,42 +677,12 @@ abstract class Sprig_MPTT extends Sprig
 	 *
 	 * Moves the current node to the first child of the target node.
 	 *
-	 * @param Sprig_MPTT|mixed $target target node primary key value or Sprig_MPTT object.
+	 * @param Sprig_MPTT|integer $target target node id or Sprig_MPTT object.
 	 * @return Sprig_MPTT
 	 */
 	public function move_to_first_child($target)
 	{
-		
-		
-		// Move should only work on nodes that are already in the tree.. if its not already it the tree it needs to be inserted!
-		if (!$this->_loaded)
-			return FALSE;
-		
-		if ( ! $target instanceof $this)
-		{
-			$target = Sprig_MPTT::factory($this->_model, array($this->pk() => $target))->load();
-			if ( ! $target->loaded())
-			{
-				return FALSE;
-			}
-		}
-		
-		// Stop $this being moved into a descendant or itself
-		if ($target->is_descendant($this) OR $this->{$this->pk()} === $target->{$this->pk()})
-		{
-			return FALSE;
-		}
-		
-		// Make sure we have the most uptodate version of this AFTER we lock
-		$this->lock();
-		$this->reload();
-		
-		$new_left = $target->{$this->left_column} + 1;
-		$level_offset = $target->{$this->level_column} - $this->{$this->level_column} + 1;
-		$this->move($new_left, $level_offset, $target->{$this->scope_column});
-		$this->unlock();
-
-		return $this;
+		return $this->move($target, TRUE, 1, 1, TRUE);
 	}
 	
 	/**
@@ -710,39 +690,12 @@ abstract class Sprig_MPTT extends Sprig
 	 *
 	 * Moves the current node to the last child of the target node.
 	 *
-	 * @param Sprig_MPTT|mixed $target target node primary key value or Sprig_MPTT object.
+	 * @param Sprig_MPTT|integer $target target node id or Sprig_MPTT object.
 	 * @return Sprig_MPTT
 	 */
 	public function move_to_last_child($target)
-	{
-		// Move should only work on nodes that are already in the tree.. if its not already it the tree it needs to be inserted!
-		if (!$this->_loaded)
-			return FALSE;
-		
-		if ( ! $target instanceof $this)
-		{
-			$target = Sprig_MPTT::factory($this->_model, array($this->pk() => $target))->load();
-			if ( ! $target->loaded())
-			{
-				return FALSE;
-			}
-		}
-		
-		// Stop $this being moved into a descendant or itself
-		if ($target->is_descendant($this) OR $this->{$this->pk()} === $target->{$this->pk()})
-		{
-			return FALSE;
-		}
-			
-		$this->lock();
-		$this->reload(); // Make sure we have the most upto date version of this AFTER we lock
-		
-		$new_left = $target->{$this->right_column};
-		$level_offset = $target->{$this->level_column} - $this->{$this->level_column} + 1;
-		$this->move($new_left, $level_offset, $target->{$this->scope_column});
-		$this->unlock();
-		
-		return $this;
+	{	
+		return $this->move($target, FALSE, 0, 1, TRUE);
 	}
 	
 	/**
@@ -750,39 +703,12 @@ abstract class Sprig_MPTT extends Sprig
 	 *
 	 * Moves the current node to the previous sibling of the target node.
 	 *
-	 * @param Sprig_MPTT|mixed $target target node primary key value or Sprig_MPTT object.
+	 * @param Sprig_MPTT|integer $target target node id or Sprig_MPTT object.
 	 * @return Sprig_MPTT
 	 */
 	public function move_to_prev_sibling($target)
-	{
-		// Move should only work on nodes that are already in the tree.. if its not already it the tree it needs to be inserted!
-		if (!$this->_loaded)
-			return FALSE;
-		
-		if ( ! $target instanceof $this)
-		{
-			$target = Sprig_MPTT::factory($this->_model, array($this->pk() => $target))->load();
-			if ( ! $target->loaded())
-			{
-				return FALSE;
-			}
-		}
-		
-		// Stop $this being moved into a descendant or itself
-		if ($target->is_descendant($this) OR $this->{$this->pk()} === $target->{$this->pk()})
-		{
-			return FALSE;
-		}
-		
-		$this->lock();
-		$this->reload(); // Make sure we have the most upto date version of this AFTER we lock
-		
-		$new_left = $target->{$this->left_column};
-		$level_offset = $target->{$this->level_column} - $this->{$this->level_column};
-		$this->move($new_left, $level_offset, $target->{$this->scope_column});
-		$this->unlock();
-		
-		return $this;
+	{	
+		return $this->move($target, TRUE, 0, 0, FALSE);
 	}
 	
 	/**
@@ -790,79 +716,93 @@ abstract class Sprig_MPTT extends Sprig
 	 *
 	 * Moves the current node to the next sibling of the target node.
 	 *
-	 * @param Sprig_MPTT|mixed $target target node primary key value or Sprig_MPTT object.
+	 * @param Sprig_MPTT|integer $target target node id or Sprig_MPTT object.
 	 * @return Sprig_MPTT
 	 */
 	public function move_to_next_sibling($target)
 	{
-		// Move should only work on nodes that are already in the tree.. if its not already it the tree it needs to be inserted!
-		if (!$this->_loaded)
-			return FALSE;
-		
-		if ( ! $target instanceof $this)
-		{
-			$target = Sprig_MPTT::factory($this->_model, array($this->pk() => $target))->load();
-			if ( ! $target->loaded())
-			{
-				return FALSE;
-			}
-		}
-		
-		// Stop $this being moved into a descendant or itself
-		if ($target->is_descendant($this) OR $this->{$this->pk()} === $target->{$this->pk()})
-		{
-			return FALSE;
-		}
-
-		$this->lock();
-		$this->reload(); // Make sure we have the most upto date version of this AFTER we lock
-		
-		$new_left = $target->{$this->right_column} + 1;
-		$level_offset = $target->{$this->level_column} - $this->{$this->level_column};
-		$this->move($new_left, $level_offset, $target->{$this->scope_column});
-		$this->unlock();
-		
-		return $this;
+		return $this->move($target, FALSE, 1, 0, FALSE);
 	}
 	
 	/**
 	 * Move
 	 *
-	 * @param integer $new_left left value for the new node position.
-	 * @param integer $level_offset
+	 * @param Sprig_MPTT|integer $target target node id or Sprig_MPTT object.
+	 * @param bool $left_column use the left column or right column from target
+	 * @param integer $left_offset left value for the new node position.
+	 * @param integer $level_offset level
+	 * @param bool allow this movement to be allowed on the root node
 	 */
-	protected function move($new_left, $level_offset, $new_scope)
+	protected function move($target, $left_column, $left_offset, $level_offset, $allow_root_target)
 	{
-		$this->lock();
-
-		$size = $this->get_size();
+		if ( ! $this->loaded())
+			return FALSE;
 		
-		$this->create_space($new_left, $size);
-
+		// Make sure we have the most upto date version of this AFTER we lock
+		$this->lock();
 		$this->reload();
 		
-		$offset = ($new_left - $this->{$this->left_column});
-		
-		// Update the values.
-		
-		DB::update($this->_table)
-			->set(array(
-				$this->left_column => new Database_Expression('`'.$this->left_column.'` + '.$offset),
-				$this->right_column => new Database_Expression('`'.$this->right_column.'` + '.$offset),
-				$this->level_column => new Database_Expression('`'.$this->level_column.'` + '.$level_offset),
-				$this->scope_column => $new_scope
-			))
-			->where($this->left_column, '>=', $this->{$this->left_column})
-			->where($this->right_column, '<=', $this->{$this->right_column})
-			->where($this->scope_column, '=', $this->{$this->scope_column})
-			->execute();
+		// Catch any database or other excpetions and unlock
+		try
+		{
+			if ( ! $target instanceof $this)
+			{
+				$target = Sprig_MPTT::factory($this->_model, array($this->pk() => $target))->load();
+				
+				if ( ! $target->loaded())
+				{
+					$this->unlock();
+					return FALSE;
+				}
+			}
+			else
+			{
+				$target->reload();
+			}
 			
-		$this->delete_space($this->{$this->left_column}, $size);
+			// Stop $this being moved into a descendant or itself or disallow if target is root
+			if ($target->is_descendant($this) 
+				OR $this->{$this->pk()} === $target->{$this->pk()}
+				OR ($allow_root_target === FALSE AND $target->is_root()))
+			{
+				$this->unlock();
+				return FALSE;
+			}
+			
+			$left_offset = ($left_column === TRUE ? $target->{$this->left_column} : $target->{$this->right_column}) + $left_offset;
+			$level_offset = $target->{$this->level_column} - $this->{$this->level_column} + $level_offset;
+	
+			$size = $this->get_size();
+			
+			$this->create_space($left_offset, $size);
+	
+			// if node is moved to a position in the tree "above" its current placement
+			// then its lft/rgt may have been altered by create_space
+			$this->reload();
+			
+			$offset = ($left_offset - $this->{$this->left_column});
+			
+			// Update the values.
+			Database::instance($this->_db)->query(NULL, 'UPDATE '.$this->_table.' 
+				SET `'.$this->left_column.'` = `'.$this->left_column.'` + '.$offset.', `'.$this->right_column.'` = `'.$this->right_column.'` + '.$offset.'
+				, `'.$this->level_column.'` = `'.$this->level_column.'` + '.$level_offset.'
+				, `'.$this->scope_column.'` = '.$target->{$this->scope_column}.' 
+				WHERE `'.$this->left_column.'` >= '.$this->{$this->left_column}.' 
+				AND `'.$this->right_column.'` <= '.$this->{$this->right_column}.' 
+				AND `'.$this->scope_column.'` = '.$this->{$this->scope_column}, TRUE);
+			
+			$this->delete_space($this->{$this->left_column}, $size);
+		}
+		catch (Exception $e)
+		{
+			//Unlock table and re-throw exception
+			$this->unlock();
+			throw $e;
+		}
 
 		$this->unlock();
 		
-		//reload this model to reflect new position
-		$this->reload();
+		return $this;
 	}
 	
 	/**
@@ -922,7 +862,7 @@ abstract class Sprig_MPTT extends Sprig
 	{
 		// TODO... redo this so its proper :P and open it public
 		// used by verify_tree()
-		return DB::select()->as_object()->distinct($this->scope_column)->from($this->_table)->execute();
+		return DB::select()->as_object()->distinct($this->scope_column)->from($this->_table)->execute($this->_db);
 	}
 	
 	public function verify_scope($scope)
@@ -932,21 +872,21 @@ abstract class Sprig_MPTT extends Sprig
 		$end = $root->{$this->right_column};
 		
 		// Find nodes that have slipped out of bounds.
-		$result = Database::instance()->query(Database::SELECT, 'SELECT count(*) as count FROM `'.$this->_table.'` 
+		$result = Database::instance($this->_db)->query(Database::SELECT, 'SELECT count(*) as count FROM `'.$this->_table.'` 
 			WHERE `'.$this->scope_column.'` = '.$root->scope.' AND (`'.$this->left_column.'` > '.$end.' 
 			OR `'.$this->right_column.'` > '.$end.')', TRUE);
 		if ($result[0]->count > 0)
 			return FALSE;
 		
 		// Find nodes that have the same left and right value
-		$result = Database::instance()->query(Database::SELECT, 'SELECT count(*) as count FROM `'.$this->_table.'` 
+		$result = Database::instance($this->_db)->query(Database::SELECT, 'SELECT count(*) as count FROM `'.$this->_table.'` 
 			WHERE `'.$this->scope_column.'` = '.$root->scope.' 
 			AND `'.$this->left_column.'` = `'.$this->right_column.'`', TRUE);
 		if ($result[0]->count > 0)
 			return FALSE;
 		
 		// Find nodes that right value is less than the left value
-		$result = Database::instance()->query(Database::SELECT, 'SELECT count(*) as count FROM `'.$this->_table.'` 
+		$result = Database::instance($this->_db)->query(Database::SELECT, 'SELECT count(*) as count FROM `'.$this->_table.'` 
 			WHERE `'.$this->scope_column.'` = '.$root->scope.' 
 			AND `'.$this->left_column.'` > `'.$this->right_column.'`', TRUE);
 		if ($result[0]->count > 0)
@@ -956,7 +896,7 @@ abstract class Sprig_MPTT extends Sprig
 		$i = 1;
 		while ($i <= $end)
 		{
-			$result = Database::instance()->query(Database::SELECT, 'SELECT count(*) as count FROM `'.$this->_table.'` 
+			$result = Database::instance($this->_db)->query(Database::SELECT, 'SELECT count(*) as count FROM `'.$this->_table.'` 
 				WHERE `'.$this->scope_column.'` = '.$root->scope.' 
 				AND (`'.$this->left_column.'` = '.$i.' OR `'.$this->right_column.'` = '.$i.')', TRUE);
 			
@@ -991,7 +931,7 @@ abstract class Sprig_MPTT extends Sprig
 			)
 			->from($this->_table)
 			->where($this->pk(), '=', $this->{$this->pk()})
-			->execute()
+			->execute($this->_db)
 			->current();
 		
 		return $this->values($mptt_vals);

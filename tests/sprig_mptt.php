@@ -381,7 +381,7 @@ class UnitTest_Sprig_MPTT extends UnitTest_Case {
 			->assert_false($node_3->move_to_first_child(3))
 			->assert_equal($node_3->move_to_first_child(6), $node_3);
 		
-		// Load node 5 to check insert worked
+		// Load node 6 to check move worked
 		$node_6 = Sprig::factory('mptt_test', array('id' => 6))->load();
 		$node_6_children = $node_6->children();
 		$root = $node_6->root();
@@ -393,6 +393,7 @@ class UnitTest_Sprig_MPTT extends UnitTest_Case {
 			->assert_count($root_children, 3)
 			->assert_not_equal($root_children[1]->id, 3)
 			->assert_true($node_3->verify_tree());
+			
 	}
 
 	function test_move_to_last_child()
@@ -403,7 +404,7 @@ class UnitTest_Sprig_MPTT extends UnitTest_Case {
 			->assert_false($node_3->move_to_last_child(3))
 			->assert_equal($node_3->move_to_last_child(6), $node_3);
 		
-		// Load node 5 to check insert worked
+		// Load node 6 to check move worked
 		$node_6 = Sprig::factory('mptt_test', array('id' => 6))->load();
 		$node_6_children = $node_6->children();
 		$root = $node_6->root();
@@ -425,7 +426,7 @@ class UnitTest_Sprig_MPTT extends UnitTest_Case {
 			->assert_false($node_3->move_to_prev_sibling(3))
 			->assert_equal($node_3->move_to_prev_sibling(8), $node_3);
 		
-		// Load node 5 to check insert worked
+		// Load node 8 to check move worked
 		$node_8 = Sprig::factory('mptt_test', array('id' => 8))->load();
 		$node_8_siblings = $node_8->siblings(TRUE);
 		$root = $node_8->root();
@@ -447,7 +448,7 @@ class UnitTest_Sprig_MPTT extends UnitTest_Case {
 			->assert_false($node_3->move_to_next_sibling(3))
 			->assert_equal($node_3->move_to_next_sibling(8), $node_3);
 		
-		// Load node 5 to check insert worked
+		// Load node 8 to check move worked
 		$node_8 = Sprig::factory('mptt_test', array('id' => 8))->load();
 		$node_8_siblings = $node_8->siblings(TRUE);
 		$root = $node_8->root();
