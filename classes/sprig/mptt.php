@@ -236,11 +236,11 @@ abstract class Sprig_MPTT extends Sprig
 	 */
 	public function root($scope = NULL)
 	{
-		if ($scope === NULL AND $this->_loaded)
+		if ($scope === NULL AND $this->loaded())
 		{
 			$scope = $this->{$this->scope_column};
 		}
-		elseif ($scope === NULL AND ! $this->_loaded)
+		elseif ($scope === NULL AND ! $this->loaded())
 		{
 			return FALSE;
 		}
@@ -496,7 +496,7 @@ abstract class Sprig_MPTT extends Sprig
 	protected function insert($target, $copy_left_from, $left_offset, $level_offset)
 	{
 		// Insert should only work on new nodes.. if its already it the tree it needs to be moved!
-		if ($this->_loaded)
+		if ($this->loaded())
 			return FALSE;
 		
 		
@@ -918,7 +918,7 @@ abstract class Sprig_MPTT extends Sprig
 	 */
 	public function reload()
 	{
-		if ( ! $this->_loaded) 
+		if ( ! $this->loaded()) 
 		{
 			return FALSE;
 		}
